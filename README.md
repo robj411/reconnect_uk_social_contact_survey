@@ -13,7 +13,7 @@ Lucy Goodfellow¹ *†, Billy J. Quilty¹'², Kevin van Zandvoort¹‡, W. John 
 
 This repository contains the code and analysis for the Reconnect study, a comprehensive study designed to understand patterns of social interactions across different age groups and settings in the United Kingdom.
 
-This repository reproduces the analyses which can be carried out on the survey datasets, which can be found on Zenodo at (INSERT LINK).
+This repository reproduces the analyses which can be carried out on the survey datasets, which can be found on Zenodo at [(10.5281/zenodo.16845075)](https://doi.org/10.5281/zenodo.16845075).
 
 ## Data Requirements
 
