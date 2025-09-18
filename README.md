@@ -19,7 +19,7 @@ This repository reproduces the analyses which can be carried out on the survey d
 
 To run the analyses, you will need to download the Reconnect survey dataset:
 
-1. Visit the Zenodo repository at: (INSERT LINK)
+1. Visit the Zenodo repository at: [(10.5281/zenodo.16845075)](https://doi.org/10.5281/zenodo.16845075)
 2. Download the data files
 3. Place the downloaded file in a `data/zenodo/` directory of this repository
 
@@ -99,7 +99,3 @@ The NGM analysis produces:
 - Stratified Next Generation Matrices
 - Plots and visualisations for multiple demographic stratifications
 - Appendix tables
-
-## Licence
-
-[Include licence information here when public]
