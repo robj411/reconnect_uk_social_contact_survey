@@ -235,8 +235,8 @@ for (config_idx in seq_along(ANALYSIS_CONFIGURATIONS)) {
         custom_labels <- current_config$custom_age_banding$labels
 
         # Re-bin participant ages
-        if ("part_age" %in% names(participants_iter_dt)) {
-            participants_iter_dt[, part_age_group := cut(part_age, breaks = custom_breaks, labels = custom_labels, right = FALSE, include.lowest = TRUE)]
+        if ("part_age_exact" %in% names(participants_iter_dt)) {
+            participants_iter_dt[, part_age_group := cut(part_age_exact, breaks = custom_breaks, labels = custom_labels, right = FALSE, include.lowest = TRUE)]
         }
 
         # Re-bin contact ages
