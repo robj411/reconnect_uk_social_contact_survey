@@ -238,7 +238,7 @@ raw_counts <- function(
   add_data <- part_in %>% filter(p_id %notin% cont_in$p_id) %>% select(!!!syms(select_vars)) 
   names <- colnames(add_data)
   for(var in contact_var){
-    add_data <- add_data %>% mutate(var = unname(unlist(cont_in[1,..var])))
+    add_data <- add_data %>% mutate(var = unname(unlist(cont_in[1,var])))
     colnames(add_data) <- c(names, var)
     names <- colnames(add_data)
   }

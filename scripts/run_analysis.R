@@ -36,7 +36,7 @@ reconnect_contact_common <- read_csv(here::here('data','zenodo','reconnect_conta
 reconnect_contact_extra <- read_csv(here::here('data','zenodo','reconnect_contact_extra.csv'), show_col_types = F)
 reconnect_contact <- left_join(reconnect_contact_common, 
                                reconnect_contact_extra, 
-                                   by = c('cnt_id','part_id'))
+                                   by = c('cont_id','part_id'))
 
 # load age weights for large_n
 polymod_wts <- polymod_weights()

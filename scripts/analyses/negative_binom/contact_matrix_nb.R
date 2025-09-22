@@ -13,7 +13,7 @@ part <- reconnect_participant %>%
                            T ~ NA))
 
 contacts <- reconnect_contact %>% 
-  rename(c_id = cnt_id,
+  rename(c_id = cont_id,
          p_id = part_id,
          c_location = cnt_location,
          c_age_group = cnt_age_group,
