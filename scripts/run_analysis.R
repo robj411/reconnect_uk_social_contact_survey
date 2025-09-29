@@ -32,8 +32,10 @@ reconnect_participant <- left_join(reconnect_participant_common,
                                    reconnect_participant_extra, 
                                    by = 'part_id') %>% left_join(reconnect_participant_sday, by = 'part_id')
 
-reconnect_contact_common <- read_csv(here::here('data','zenodo','reconnect_contact_common.csv'), show_col_types = F)
-reconnect_contact_extra <- read_csv(here::here('data','zenodo','reconnect_contact_extra.csv'), show_col_types = F)
+reconnect_contact_common <- read_csv(here::here('data','zenodo','reconnect_contact_common.csv'), show_col_types = F) %>% 
+  filter(!is.na(cnt_age_exact)) # remove large group contacts
+reconnect_contact_extra <- read_csv(here::here('data','zenodo','reconnect_contact_extra.csv'), show_col_types = F) %>% 
+  filter(!is.na(cnt_location)) # remove large group contacts
 reconnect_contact <- left_join(reconnect_contact_common, 
                                reconnect_contact_extra, 
                                    by = c('cont_id','part_id'))
