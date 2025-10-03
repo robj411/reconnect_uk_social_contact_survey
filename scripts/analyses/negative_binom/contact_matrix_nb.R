@@ -9,8 +9,12 @@ part <- reconnect_participant %>%
          p_ethnicity = part_ethnicity,
          p_sec_input = part_ses) %>% 
   mutate(p_gender = case_when(p_gender == 'F' ~ 'Female',
-                           p_gender == 'M' ~ 'Male',
-                           T ~ NA))
+                              p_gender == 'M' ~ 'Male',
+                              T ~ NA),
+         p_age_group = cut(part_age_exact,
+                           breaks = age_breaks,
+                           labels = age_labels,
+                           right = F))
 
 contacts <- reconnect_contact %>% 
   rename(c_id = cont_id,
@@ -22,7 +26,11 @@ contacts <- reconnect_contact %>%
          c_sec_input = cnt_ses) %>% 
   mutate(c_sex = case_when(c_sex == 'F' ~ 'Female',
                            c_sex == 'M' ~ 'Male',
-                           T ~ NA))
+                           T ~ NA),
+         c_age_group = cut(cnt_age_exact,
+                           breaks = age_breaks,
+                           labels = age_labels,
+                           right = F))
 
 # if results folder doesn't exist, create
 if(!file.exists('results')){dir.create('results')}
