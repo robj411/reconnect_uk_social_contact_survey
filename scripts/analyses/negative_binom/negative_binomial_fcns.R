@@ -127,12 +127,12 @@ polymod_weights <- function(
       if (rowSums(subset_row) == 0) { # if all 0, allocated according to population size 2025
         filt_age <- data.table(age_struc[age_struc$p_age_group %in% ages_to_subset, ])
         # scale 15-19 value by 60% if broad age group is 0-17
-        if (pmw[i, broad_age_group] == "0-17") {
+        if (pmw[i, broad_age_group] == "0-17" & any(names(subset_row) == "[15,20)")) {
           filt_age[p_age_group == "15-19", n := 0.6 * n]
           pmw[i, prob := filt_age[p_age_group == pmw[i, c_age_group], n] / sum(filt_age$n)]
         } else {
           # scale 15-19 value by 40% if broad age group is 18-64
-          if (pmw[i, broad_age_group] == "18-64") {
+          if (pmw[i, broad_age_group] == "18-64" & any(names(subset_row) == "[15,20)")) {
             filt_age[p_age_group == "15-19", n := 0.4 * n]
             pmw[i, prob := filt_age[p_age_group == pmw[i, c_age_group], n] / sum(filt_age$n)]
           } else {
@@ -142,12 +142,12 @@ polymod_weights <- function(
       } else {
         col <- age_to_pm_lab(pmw[i, c_age_group])
         # scale 15-19 value by 60% if broad age group is 0-17
-        if(pmw[i, broad_age_group] == '0-17' & any(rownames(subset_row) == "[15, 20)")){
+        if(pmw[i, broad_age_group] == '0-17' & any(names(subset_row) == "[15,20)")){
           subset_row[, '[15,20)'] <- 0.6*subset_row[, '[15,20)']
           suppressWarnings(pmw[i, prob := subset_row[,..col]/rowSums(subset_row)])
         }else{
           # scale 15-19 value by 40% if broad age group is 18-64
-          if(pmw[i, broad_age_group] == '18-64' & any(rownames(subset_row) == "[15, 20)")){
+          if(pmw[i, broad_age_group] == '18-64' & any(names(subset_row) == "[15,20)")){
             subset_row[, '[15,20)'] <- 0.4*subset_row[, '[15,20)']
             suppressWarnings(pmw[i, prob := subset_row[,..col]/rowSums(subset_row)])
           }else{
