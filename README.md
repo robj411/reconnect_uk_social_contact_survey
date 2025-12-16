@@ -15,6 +15,10 @@ This repository contains the code and analysis for the Reconnect study, a compre
 
 This repository reproduces the analyses which can be carried out on the survey datasets, which can be found on Zenodo at [10.5281/zenodo.16845074](https://doi.org/10.5281/zenodo.16845074).
 
+## Survey files
+
+PDF versions of the final surveys can be found in `/survey_files/`. These differ for adults and children, and consist of two parts. In part one, participants completed demographic information about themselves, and in part two, they completed information on their social contacts.
+
 ## Data Requirements
 
 To run the analyses, you will need to download the Reconnect survey dataset:
