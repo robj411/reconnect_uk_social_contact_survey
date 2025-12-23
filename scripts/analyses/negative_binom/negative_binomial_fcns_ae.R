@@ -1,47 +1,46 @@
-#### NEGATIVE BINOMIAL MODEL FUNCTIONS ####
+
+#### NEGATIVE BINOMIAL MODEL FUNCTIONS #### 
 
 # Function to get weights for large_n contacts from Polymod setting-specific matrices
 polymod_weights <- function(
-    broad_ages = c(18, 65),
+    broad_ages = c(18,65),
     fine_ages = age_vals,
     age_struc = age_structure_fine,
-    locations = c("total", "work", "school", "other")) {
+    locations = c('total','work','school','other')
+){
+  
   # add 0 to lower bounds if not there, same with 18
   fine_ages <- sort(unique(c(0, fine_ages)))
-  age_labels <- c(paste0(c(fine_ages[1:length(fine_ages) - 1]), "-", c(fine_ages[2:length(fine_ages)] - 1)), paste0(fine_ages[length(fine_ages)], "+"))
+  age_labels <- c(paste0(c(fine_ages[1:length(fine_ages)-1]), '-', c(fine_ages[2:length(fine_ages)]-1)), paste0(fine_ages[length(fine_ages)], '+'))
   
-  # broad ages labels
+  # broad ages labels 
   broad_ages <- sort(unique(c(0, broad_ages)))
-  broad_age_labels <- c(paste0(c(broad_ages[1:length(broad_ages) - 1]), "-", c(broad_ages[2:length(broad_ages)] - 1)), paste0(broad_ages[length(broad_ages)], "+"))
+  broad_age_labels <- c(paste0(c(broad_ages[1:length(broad_ages)-1]), '-', c(broad_ages[2:length(broad_ages)]-1)), paste0(broad_ages[length(broad_ages)], '+'))
   
-  # overlaps between fine and broad age groups
+  # overlaps between fine and broad age groups 
   overlaps <- CJ(age_labels, broad_age_labels, overlap = F)
-  for (i in 1:nrow(overlaps)) {
-    broad_vec <- suppressWarnings(case_when(
-      grepl("[+]", overlaps[i, broad_age_labels]) ~
-        c(as.numeric(gsub("[+]", "", overlaps[i, broad_age_labels])), 120),
-      T ~ as.numeric(unlist(strsplit(overlaps[i, broad_age_labels], "-")))
-    ))
-    c_vec <- suppressWarnings(case_when(
-      grepl("[+]", overlaps[i, age_labels]) ~
-        c(as.numeric(gsub("[+]", "", overlaps[i, age_labels])), 120),
-      T ~ as.numeric(unlist(strsplit(overlaps[i, age_labels], "-")))
-    ))
+  for(i in 1:nrow(overlaps)){
+    broad_vec <- suppressWarnings(case_when(grepl('[+]', overlaps[i, broad_age_labels]) ~ 
+                                              c(as.numeric(gsub('[+]','',overlaps[i, broad_age_labels])), 120),
+                                            T ~ as.numeric(unlist(strsplit(overlaps[i, broad_age_labels],'-')))))
+    c_vec <- suppressWarnings(case_when(grepl('[+]', overlaps[i, age_labels]) ~ 
+                                          c(as.numeric(gsub('[+]','',overlaps[i, age_labels])), 120),
+                                        T ~ as.numeric(unlist(strsplit(overlaps[i, age_labels],'-')))))
     
-    if (length(intersect(c(broad_vec[1]:broad_vec[2]), c(c_vec[1]:c_vec[2]))) > 0) {
+    if(length(intersect(c(broad_vec[1]:broad_vec[2]), c(c_vec[1]:c_vec[2]))) > 0){
       overlaps[i, overlap := T]
     }
   }
   
   # switch between age label styles (ukscs vs polymod)
-  age_to_pm_lab <- function(chars) {
+  age_to_pm_lab <- function(chars){
     out <- c()
-    for (char in chars) {
-      if (char == paste0(max(fine_ages), "+")) {
+    for(char in chars){
+      if(char == paste0(max(fine_ages), '+')){
         out <- c(out, char)
-      } else {
-        vals <- as.numeric(unlist(strsplit(char, "-")))
-        val <- paste0("[", vals[1], ",", vals[2] + 1, ")")
+      }else{
+        vals <- as.numeric(unlist(strsplit(char, '-')))
+        val <- paste0('[',vals[1], ',', vals[2] + 1,')')
         out <- c(out, val)
       }
     }
@@ -52,55 +51,45 @@ polymod_weights <- function(
   matrices <- list()
   
   # per capita location-specific contact matrix, scaled up to 2025 population
-  for (i in 1:length(locations)) {
+  for(i in 1:length(locations)){
     location <- locations[i]
     filter_locn <- list(a = 1)
-    names(filter_locn) <- paste0("cnt_", location)
+    names(filter_locn) <- paste0('cnt_', location)
     
-    if (location == "other") {
-      out <- socialmixr::contact_matrix(polymod,
-                                        countries = "United Kingdom", age.limits = fine_ages,
+    if(location == 'other'){
+      out <- socialmixr::contact_matrix(polymod, countries = "United Kingdom", age.limits = fine_ages, 
                                         per.capita = TRUE,
-                                        filter = list(cnt_transport = 1),
-                                        missing.participant.age = "remove",
-                                        missing.contact.age = "remove"
-      )$matrix.per.capita
-      out <- out + socialmixr::contact_matrix(polymod,
-                                              countries = "United Kingdom", age.limits = fine_ages,
-                                              per.capita = TRUE,
-                                              filter = list(cnt_leisure = 1),
-                                              missing.participant.age = "remove",
-                                              missing.contact.age = "remove"
-      )$matrix.per.capita
-      out <- out + socialmixr::contact_matrix(polymod,
-                                              countries = "United Kingdom", age.limits = fine_ages,
-                                              per.capita = TRUE,
-                                              filter = list(cnt_otherplace = 1),
-                                              missing.participant.age = "remove",
-                                              missing.contact.age = "remove"
-      )$matrix.per.capita
-    } else {
-      if (location == "total") {
-        out <- socialmixr::contact_matrix(polymod,
-                                          countries = "United Kingdom", age.limits = fine_ages,
+                                        filter = list(cnt_transport = 1), 
+                                        missing.participant.age = 'remove',
+                                        missing.contact.age = 'remove')$matrix.per.capita
+      out <- out + socialmixr::contact_matrix(polymod, countries = "United Kingdom", age.limits = fine_ages, 
+                                        per.capita = TRUE,
+                                        filter = list(cnt_leisure = 1), 
+                                        missing.participant.age = 'remove',
+                                        missing.contact.age = 'remove')$matrix.per.capita
+      out <- out + socialmixr::contact_matrix(polymod, countries = "United Kingdom", age.limits = fine_ages, 
+                                        per.capita = TRUE,
+                                        filter = list(cnt_otherplace = 1), 
+                                        missing.participant.age = 'remove',
+                                        missing.contact.age = 'remove')$matrix.per.capita
+    }else{
+      if(location=='total'){
+        out <- socialmixr::contact_matrix(polymod, countries = "United Kingdom", age.limits = fine_ages, 
                                           per.capita = TRUE,
-                                          missing.participant.age = "remove",
-                                          missing.contact.age = "remove"
-        )$matrix.per.capita
-      } else {
-        out <- socialmixr::contact_matrix(polymod,
-                                          countries = "United Kingdom", age.limits = fine_ages,
+                                          missing.participant.age = 'remove',
+                                          missing.contact.age = 'remove')$matrix.per.capita  
+      }else{
+        out <- socialmixr::contact_matrix(polymod, countries = "United Kingdom", age.limits = fine_ages, 
                                           per.capita = TRUE,
-                                          filter = filter_locn,
-                                          missing.participant.age = "remove",
-                                          missing.contact.age = "remove"
-        )$matrix.per.capita
+                                          filter = filter_locn, 
+                                          missing.participant.age = 'remove',
+                                          missing.contact.age = 'remove')$matrix.per.capita    
       }
     }
     
-    # scale up to 2022 population
-    for (age in 1:nrow(age_struc)) {
-      out[, age] <- out[, age] * age_struc$n[age]
+    # scale up to 2022 population 
+    for(age in 1:nrow(age_struc)){
+      out[, age] <- out[, age]*age_struc$n[age]
     }
     
     matrices[[i]] <- out
@@ -109,45 +98,43 @@ polymod_weights <- function(
   names(matrices) <- locations
   
   # polymod weights for each p_age_group, c_age_group, c_location
-  pmw <- data.table(CJ(
-    p_age_group = age_labels, c_age_group = age_labels,
-    broad_age_group = broad_age_labels, c_location = locations, prob = -8, sorted = F
-  ))
+  pmw <- data.table(CJ(p_age_group = age_labels, c_age_group = age_labels, 
+                       broad_age_group = broad_age_labels, c_location = locations, prob = -8, sorted=F))
   
-  for (i in 1:nrow(pmw)) {
+  for(i in 1:nrow(pmw)){
     # if no overlap, prob = 0
-    if (overlaps[age_labels == pmw[i, c_age_group] & broad_age_labels == pmw[i, broad_age_group], overlap] == F) {
+    if(overlaps[age_labels == pmw[i, c_age_group] & broad_age_labels == pmw[i, broad_age_group], overlap] == F){
       pmw[i, prob := 0]
-    } else {
+    }else{
       matr <- data.table(matrices[[pmw[i, c_location]]]) # location-specfic matrix
       row <- matr[which(age_labels == pmw[i, p_age_group]), ] # participant's age row
       ages_to_subset <- overlaps[broad_age_labels == pmw[i, broad_age_group] & overlap == T, age_labels]
       ages_to_subset_pm <- age_to_pm_lab(ages_to_subset)
-      subset_row <- row[, ..ages_to_subset_pm] # contacts with feasible ages
-      if (rowSums(subset_row) == 0) { # if all 0, allocated according to population size 2025
+      subset_row <- row[,..ages_to_subset_pm] # contacts with feasible ages
+      if(rowSums(subset_row) == 0){ # if all 0, allocated according to population size 2025
         filt_age <- data.table(age_struc[age_struc$p_age_group %in% ages_to_subset, ])
         # scale 15-19 value by 60% if broad age group is 0-17
-        if (pmw[i, broad_age_group] == "0-17" & any(names(subset_row) == "[15,20)")) {
-          filt_age[p_age_group == "15-19", n := 0.6 * n]
-          pmw[i, prob := filt_age[p_age_group == pmw[i, c_age_group], n] / sum(filt_age$n)]
-        } else {
+        if(pmw[i, broad_age_group] == '0-17'){
+          filt_age[p_age_group == '15-19', n := 0.6*n]
+          pmw[i, prob := filt_age[p_age_group == pmw[i, c_age_group], n]/sum(filt_age$n)]  
+        }else{
           # scale 15-19 value by 40% if broad age group is 18-64
-          if (pmw[i, broad_age_group] == "18-64" & any(names(subset_row) == "[15,20)")) {
-            filt_age[p_age_group == "15-19", n := 0.4 * n]
-            pmw[i, prob := filt_age[p_age_group == pmw[i, c_age_group], n] / sum(filt_age$n)]
-          } else {
-            pmw[i, prob := filt_age[p_age_group == pmw[i, c_age_group], n] / sum(filt_age$n)]
+          if(pmw[i, broad_age_group] == '18-64'){
+            filt_age[p_age_group == '15-19', n := 0.4*n]
+            pmw[i, prob := filt_age[p_age_group == pmw[i, c_age_group], n]/sum(filt_age$n)]  
+          }else{
+            pmw[i, prob := filt_age[p_age_group == pmw[i, c_age_group], n]/sum(filt_age$n)]  
           }
         }
-      } else {
+      }else{
         col <- age_to_pm_lab(pmw[i, c_age_group])
         # scale 15-19 value by 60% if broad age group is 0-17
-        if(pmw[i, broad_age_group] == '0-17' & any(names(subset_row) == "[15,20)")){
+        if(pmw[i, broad_age_group] == '0-17' & any(rownames(subset_row) == "[15, 20)")){
           subset_row[, '[15,20)'] <- 0.6*subset_row[, '[15,20)']
           suppressWarnings(pmw[i, prob := subset_row[,..col]/rowSums(subset_row)])
         }else{
           # scale 15-19 value by 40% if broad age group is 18-64
-          if(pmw[i, broad_age_group] == '18-64' & any(names(subset_row) == "[15,20)")){
+          if(pmw[i, broad_age_group] == '18-64' & any(rownames(subset_row) == "[15, 20)")){
             subset_row[, '[15,20)'] <- 0.4*subset_row[, '[15,20)']
             suppressWarnings(pmw[i, prob := subset_row[,..col]/rowSums(subset_row)])
           }else{
@@ -163,12 +150,8 @@ polymod_weights <- function(
   #   ggplot() + geom_line(aes(x=c_age_group, y=prob, group=interaction(c_location,broad_age_group), col=c_location),lwd=0.8) + facet_wrap(.~p_age_group)
   
   # check all appropriate sums are 1
-  test <- pmw %>%
-    group_by(p_age_group, broad_age_group, c_location) %>%
-    summarise(s = sum(prob))
-  if (!all.equal(test$s, rep(1, nrow(test)))) {
-    warning("Some sums not 1")
-  }
+  test <- pmw %>% group_by(p_age_group, broad_age_group, c_location) %>% summarise(s=sum(prob)) 
+  if(!all.equal(test$s, rep(1,nrow(test)))){warning('Some sums not 1')}
   
   pmw
 }
@@ -178,28 +161,29 @@ nb_loglik <- function(x, par, trunc_num) {
   k <- par[["k"]]
   mean <- par[["mu"]]
   ll <- rep(NA_real_, length(x))
-  ll[x < trunc_num] <- dnbinom(x[x < trunc_num], mu = mean, size = 1 / k, log = TRUE)
-  ll[x >= trunc_num] <- dnbinom(trunc_num, mu = mean, size = 1 / k, log = TRUE)
+  ll[x < trunc_num] <- dnbinom(x[x < trunc_num], mu = mean, size = 1/k, log = TRUE)
+  ll[x >= trunc_num] <- dnbinom(trunc_num, mu = mean, size = 1/k, log = TRUE)
   return(-sum(ll))
 }
 
 # Function to estimate negative binomial mu from counts data
-nbinom_optim <- function(counts_input,
-                         param = "mu", trunc) {
-  bs_optim <- function(counts_) {
-    if (sum(counts_) == 0) {
+nbinom_optim <- function(counts_input, 
+                         param = 'mu', trunc) {
+  
+  bs_optim <- function(counts_){
+    if(sum(counts_) == 0){
       return(0)
-    } else {
-      outs <- optim(c(mu = 0.5, k = 1), lower = c(mu = 1e-5, k = 1e-5), nb_loglik, x = counts_, trunc_num = trunc, method = "L-BFGS-B")
+    }else{
+      outs = optim(c(mu = 0.5, k = 1), lower = c(mu = 1e-5, k = 1e-5), nb_loglik, x = counts_, trunc_num = trunc, method = "L-BFGS-B")
       return(as.numeric(outs$par[param]))
     }
   }
   
-  if (sum(counts_input != 0)) {
-    outs_mat <- apply(counts_input, FUN = bs_optim, MARGIN = 1)
+  if(sum(counts_input != 0)){
+    outs_mat = apply(counts_input, FUN = bs_optim, MARGIN = 1)
     outs_mat
-  } else {
-    return(rep(0, nrow(counts_input)))
+  } else{
+    return(rep(0,nrow(counts_input)))
   }
 }
 
@@ -209,52 +193,49 @@ raw_counts <- function(
     participant_var,
     contact_var,
     large_n_input = T,
-    location_inclusion = T) {
-  if (is.null(contact_var)) {
-    cont_in <- cont_in %>% mutate(c_null = "NULL")
-    contact_var <- "c_null"
+    location_inclusion = T
+){
+  
+  if(is.null(contact_var)){
+    cont_in <- cont_in %>% mutate(c_null = 'NULL')
+    contact_var <- 'c_null'
   }
   
   # Determine which variables to select from part_in
-  select_vars <- unique(c("p_id", participant_var))
+  select_vars <- unique(c('p_id', participant_var))
   
-  if ((length(contact_var) == 1 & "c_age_group" %in% contact_var & large_n_input) |
-      (length(contact_var) == 1 & "c_location" %in% contact_var & large_n_input)) {
-    select_vars <- c(select_vars, colnames(part_in)[grepl("add_", colnames(part_in))])
-  } else {
-    if (large_n_input & length(contact_var) == 1) {
-      if (contact_var == "c_null") {
-        select_vars <- c(select_vars, "large_n")
+  if((length(contact_var) == 1 & 'c_age_group' %in% contact_var & large_n_input) |
+     (length(contact_var) == 1 & 'c_location' %in% contact_var & large_n_input)){
+    select_vars <- c(select_vars, colnames(part_in)[grepl('add_', colnames(part_in))])
+  }else{
+    if(large_n_input & length(contact_var) == 1){
+      if(contact_var=='c_null'){
+        select_vars <- c(select_vars, 'large_n')
       }
     }
   }
   
-  if (location_inclusion == T) {
+  if(location_inclusion == T){
     contact_var_orig <- contact_var
-    contact_var <- unique(c(contact_var, "c_location"))
-  } else {
-    contact_var_orig <- contact_var
-  }
+    contact_var <- unique(c(contact_var, 'c_location'))
+  }else{contact_var_orig <- contact_var}
   
   # in case joining vars (apart from p_id) are in both part_in and cont_in
-  for (var_i in select_vars[select_vars != "p_id"]) {
+  for(var_i in select_vars[select_vars != 'p_id']){
     cont_in <- cont_in %>% select(!starts_with(var_i))
   }
   
   # Calculate contacts for each combination and location
-  contact_counts <- cont_in %>%
-    filter(p_id %in% part_in$p_id) %>% # in case cont_in/part_in are filtered, e.g. by gender
+  contact_counts <- cont_in %>% filter(p_id %in% part_in$p_id) %>%  # in case cont_in/part_in are filtered, e.g. by gender
     left_join(part_in %>% filter(p_id %in% cont_in$p_id) %>% select(!!!syms(select_vars)), by = "p_id") %>%
     group_by(!!!syms(select_vars), !!!syms(contact_var)) %>%
-    summarise(n_contacts = n(), .groups = "drop")
+    summarise(n_contacts = n(), .groups = "drop")  
   
   # drop any participants which contain any NAs for contact_var
   contact_counts <- contact_counts %>% drop_na(!!!syms(contact_var))
   
   # adding back in individuals with 0 contacts
-  add_data <- part_in %>%
-    filter(p_id %notin% cont_in$p_id) %>%
-    select(!!!syms(select_vars))
+  add_data <- part_in %>% filter(p_id %notin% cont_in$p_id) %>% select(!!!syms(select_vars)) 
   names <- colnames(add_data)
   for(var in contact_var){
     add_data <- add_data %>% mutate(var = unname(unlist(cont_in[1,var])))
@@ -262,93 +243,99 @@ raw_counts <- function(
     names <- colnames(add_data)
   }
   add_data <- add_data %>% mutate(n_contacts = 0)
-  colnames(add_data) <- c(select_vars, contact_var, "n_contacts")
-  contact_counts <- rbind(
-    contact_counts,
-    add_data
-  ) %>%
-    complete(nesting(!!!syms(select_vars)), !!!syms(contact_var), fill = list(n_contacts = 0))
+  colnames(add_data) <- c(select_vars, contact_var, 'n_contacts')
+  contact_counts <- rbind(contact_counts,
+                          add_data) %>% 
+    complete(nesting(!!!syms(select_vars)), !!!syms(contact_var), fill = list(n_contacts = 0)) 
   
-  if (location_inclusion == T) {
+  if(location_inclusion == T){
     # Calculate total contacts across all locations
     total_contacts <- contact_counts %>%
-      group_by(!!!syms(select_vars), !!!syms(contact_var[contact_var != "c_location"])) %>%
+      group_by(!!!syms(select_vars), !!!syms(contact_var[contact_var != 'c_location'])) %>%
       summarise(n_contacts = sum(n_contacts), .groups = "drop") %>%
-      mutate(c_location = "Total")
+      mutate(c_location = "Total") 
     
     # Combine location-specific and total contacts
     all_contacts <- bind_rows(contact_counts, total_contacts)
-  } else {
+  }else{
     all_contacts <- contact_counts
   }
   
   # pivot_wider
   all_contacts_w <- all_contacts %>%
     pivot_wider(
-      names_from = !!sym(contact_var_orig),
+      names_from = all_of(contact_var_orig),   # e.g. c("col1","col2")
       values_from = n_contacts,
-      names_glue = sprintf("cag_{%s}", contact_var_orig),
+      names_glue = sprintf("cag_{%s}_{%s}", contact_var_orig[1], contact_var_orig[2])
     ) %>%
     select(!!!syms(select_vars), contains("c_location"), starts_with("cag"), starts_with("add_"))
   
+  # all_contacts_w <- all_contacts %>% pivot_wider(
+  #   names_from = !!sym(contact_var_orig),
+  #   values_from = n_contacts,
+  #   names_glue = sprintf('cag_{%s}', contact_var_orig),
+  # ) %>% select(!!!syms(select_vars), contains('c_location'), starts_with('cag'), starts_with('add_'))
+  
   # set maximum (right-truncation)
-  all_contacts_w <- all_contacts_w %>%
-    mutate(across(starts_with("add_"), max_100))
+  all_contacts_w <- all_contacts_w %>% 
+    mutate(across(starts_with('add_'), max_100))
   
   all_contacts_w
+  
 }
 
 
-add_large_n <- function(vec, p_age_in, locn_in, large_weights_loc_in) {
+add_large_n <- function(vec, p_age_in, locn_in, large_weights_loc_in){
+  
   p_age_num <- which(age_labels == p_age_in)
   # print(length(vec))
-  
+
   # u18 contacts
-  if (vec[1] > 0) {
-    probs <- large_weights_loc_in[broad_age_group %like% "0-17", ]$prob
-    samps <- sample(1:length(probs),
-                    size = vec[1],
-                    replace = T,
-                    prob = probs
-    )
-    
-    occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps == x]))
-    
-    vec <- vec + c(rep(0, 3), occurrence_vec)
+  if(vec[1] > 0){
+
+      probs <- large_weights_loc_in[broad_age_group %like% '0-17',]$prob
+      samps <- sample(1:length(probs),
+                      size = vec[1],
+                      replace = T,
+                      prob = probs)
+      
+      occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps==x]))
+      
+      vec <- vec + c(rep(0,3), occurrence_vec)
+
   }
   
-  
+
   # add other contacts proportional to polymod weights
-  
+
   # 18-64
-  if (vec[2] > 0) {
-    probs <- large_weights_loc_in[broad_age_group %like% "18-64", ]$prob
+  if(vec[2] > 0){
+    probs <- large_weights_loc_in[broad_age_group %like% '18-64',]$prob
     samps <- sample(1:length(probs),
                     size = vec[2],
                     replace = T,
-                    prob = probs
-    )
+                    prob = probs)
     
-    occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps == x]))
+    occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps==x]))
     
-    vec <- vec + c(rep(0, 3), occurrence_vec)
+    vec <- vec + c(rep(0,3), occurrence_vec)
   }
-  
+
   # 65+
-  if (vec[3] > 0) {
-    probs <- large_weights_loc_in[broad_age_group %like% "65+", ]$prob
+  if(vec[3] > 0){
+    probs <- large_weights_loc_in[broad_age_group %like% '65+',]$prob
     samps <- sample(1:length(probs),
                     size = vec[3],
                     replace = T,
-                    prob = probs
-    )
+                    prob = probs)
     
-    occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps == x]))
+    occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps==x]))
     
-    vec <- vec + c(rep(0, 3), occurrence_vec)
+    vec <- vec + c(rep(0,3), occurrence_vec)
   }
   
   vec
+
 }
 
 # function to bootstrap sample from participants
@@ -371,7 +358,7 @@ bootstrap_sample <- function(
     stop('Needs large_weights')
   }
   
-  data <- data[tolower(data$c_location) == locn, ]
+  data <- data[tolower(data$c_location) == locn,]
   
   # add all of 'add_' columns for 'add_XXX_total'
   if(sum(grepl('add',colnames(data))) > 0){
@@ -422,7 +409,7 @@ bootstrap_sample <- function(
     counts <- list()
     
     # will contain count values for each possible contact's group
-    for(c in 1:ncol(data %>% select(starts_with('cag')))) {
+    for(c in 1:ncol(data %>% select(starts_with('cag')))){
       n_col <- n_distinct((data %>% filter(!!sym(p_key) == p))$p_id)
       counts[[c]] <- data.table(matrix(0, ncol = n_col))
     }
@@ -432,15 +419,14 @@ bootstrap_sample <- function(
     data <- data[, row_id := 1:nrow(data)] # = p_id for adults but not for children
     
     # bootstrapping
-    for(bs_i in 1:bs) {
+    for(bs_i in 1:bs){
+      
       # impute if impute_contact_in = T
-      if(impute_contact_in) {
-        data_imputed <- fcn_impute_raw_counts(
-          data,
-          c_var,
-          impute_vars_in
-        )
-      } else {
+      if(impute_contact_in){
+        data_imputed <- fcn_impute_raw_counts(data,
+                                              c_var,
+                                              impute_vars_in)
+      }else{
         data_imputed <- copy(data)
       }
       
@@ -450,85 +436,78 @@ bootstrap_sample <- function(
       row_samples <- ids_df$row_id[row_samples_index]
       
       # merging sampled data
-      occurrences <- rbind(
-        data.table(table(row_samples)), 
-        data.table(
-          row_samples = (1:nrow(data_imputed))[!(1:nrow(data_imputed)) %in% row_samples],
-          N = 0
-        )
-      )
-      setnames(occurrences, "row_samples", "row_id")
-      occurrences[, row_id := as.numeric(row_id)]
-      data_add <- data_imputed[occurrences, on = "row_id"]
+      occurrences <- rbind(data.table(table(row_samples)), 
+                           data.table(row_samples = (1:nrow(data_imputed))[!(1:nrow(data_imputed)) %in% row_samples],
+                                      N = 0
+                           ))
+      setnames(occurrences, 'row_samples', 'row_id'); occurrences[, row_id := as.numeric(row_id)]
+      data_add <- data_imputed[occurrences, on = 'row_id']
       counts_all <- data_add[rep(seq_len(nrow(data_add)), N), ]
-      counts_all[, c("row_id", "N") := NULL]
+      counts_all[, c('row_id','N') := NULL]
       
       # uniquely identify rows (about to become columns)
-      counts_all[, p_id_row := paste0(p_id, "_", 1:nrow(counts_all))]
+      counts_all[, p_id_row := paste0(p_id, '_', 1:nrow(counts_all))]
       
       # add large_n in at random, if large_n_input == T
-      if (large_n_input & length(c_var) == 1 & "c_age_group" %in% c_var & locn %in% large_weights$c_location) {
-        large_weights_loc <- large_weights %>% filter(c_location == locn, !!sym(p_var) == p)
+      if(large_n_input & length(c_var) == 1 & 'c_age_group' %in% c_var & locn %in% large_weights$c_location){
+        
+        large_weights_loc <- large_weights %>% filter(c_location == locn, !!sym(p_key) == p)
         
         # transpose so can vectorise across columns
-        t_counts_all <- dcast.data.table(
-          melt.data.table(counts_all,
-                          id.vars = c("p_id", "p_id_row", p_var, "post_strat_weight", "c_location")
-          )[, c("p_id_row", "variable", "value")],
-          variable ~ p_id_row,
-          value.var = "value"
-        )
+        t_counts_all <- dcast.data.table(melt.data.table(counts_all, 
+                                       id.vars = c('p_id','p_id_row',p_key,'post_strat_weight','c_location'))[,c('p_id_row','variable','value')],
+                                  variable ~ p_id_row, value.var = 'value')
         t_counts_all[, variable := NULL]
         
         # make back into numeric
         t_counts_all <- t_counts_all[, lapply(.SD, as.numeric)]
         
         # apply function add_large_n
-        t_counts_all <- t_counts_all[, lapply(.SD, add_large_n,
-                                              p_age_in = p, locn_in = locn,
-                                              large_weights_loc_in = large_weights_loc
-        )]
+        t_counts_all <- t_counts_all[, lapply(.SD, add_large_n, 
+                                                      p_age_in = p, locn_in = locn,
+                                                      large_weights_loc_in = large_weights_loc)]
         
         # make back into original form
-        counts_all2 <- dcast.data.table(
-          melt.data.table(cbind(t_counts_all, variable = colnames(counts_all)[grepl("cag|add", colnames(counts_all))]),
-                          id.vars = "variable", variable.name = "p_id_row"
-          ),
-          p_id_row ~ variable,
-          value.var = "value"
-        )
+        counts_all2 <- dcast.data.table(melt.data.table(cbind(t_counts_all, variable = colnames(counts_all)[grepl('cag|add', colnames(counts_all))]), 
+                                   id.vars = 'variable', variable.name = 'p_id_row'),
+                                  p_id_row ~ variable, value.var = 'value')
         
-        vec_colnames <- !grepl("cag|add", colnames(counts_all))
-        counts_all2 <- counts_all2[counts_all[, ..vec_colnames], on = "p_id_row"]
+        vec_colnames <- !grepl('cag|add', colnames(counts_all))
+        counts_all2 <- counts_all2[counts_all[, ..vec_colnames], on = 'p_id_row']
         
-        add_vec <- which(!colnames(counts_all2) %like% "add")
+        add_vec <- which(!colnames(counts_all2) %like% 'add')
         counts_all <- counts_all2[, ..add_vec]
+        
       }
       
       # move this data into `counts`
-      for(c in c_vec) {
-        if(bs_i == 1) {
-          counts[[c]] <- matrix(counts_all[, get(paste0('cag_', c))], nrow = 1)
+      for(c in c_vec){
+        
+        if(bs_i == 1){
+          counts[[c]] <- matrix(counts_all[, get(paste0('cag_', c))], nrow=1)
         }else{
-          counts[[c]] <- rbind(counts[[c]], matrix(counts_all[, get(paste0('cag_', c))], nrow = 1))  
+          counts[[c]] <- rbind(counts[[c]], matrix(counts_all[, get(paste0('cag_', c))], nrow=1))  
         }
         
       }
       
       # if(bs_i %% 50 == 0){print(bs_i)}
       
-      setTxtProgressBar(pb, step_i)
-      step_i <- step_i + 1
+      setTxtProgressBar(pb,step_i); step_i <- step_i + 1
+      
     }
     
     # fit negative binomial
-    for(c in c_vec) {
-      mu_out <- nbinom_optim(counts[[c]], "mu", trunc = trunc_in)
-      k_out <- nbinom_optim(counts[[c]], "k", trunc = trunc_in)
+    for(c in c_vec){
+      
+      mu_out <- nbinom_optim(counts[[c]], 'mu', trunc = trunc_in)
+      k_out <- nbinom_optim(counts[[c]], 'k', trunc = trunc_in)
       
       bs_out[p_key == p & c_var == c, mu := mu_out]
       bs_out[p_key == p & c_var == c, k := k_out]
+      
     }
+    
   }
   
   close(pb)
@@ -544,126 +523,119 @@ bootstrap_sample_one_dim <- function(
     c_var,
     bs,
     large_n_input,
-    trunc_in) {
+    trunc_in
+){
+  
   data <- data %>% drop_na()
   
   # filter out participant categories if only one participant
-  if (!is.null(p_var)) {
-    data <- data %>%
-      group_by(!!!syms(p_var)) %>%
-      mutate(nrow = n()) %>%
-      ungroup() %>%
-      filter(nrow > 1) %>%
-      select(!nrow)
+  if(!is.null(p_var)){
+    data <- data %>% group_by(!!!syms(p_var)) %>% 
+      mutate(nrow=n()) %>% ungroup() %>% filter(nrow > 1) %>% select(!nrow)  
   }
   
   # add all of 'add_' columns into location totals
-  if (is.null(p_var) & !is.null(c_var) & sum(grepl("add", colnames(data))) == 9) {
-    if (c_var == "c_location") {
+  if(is.null(p_var) & !is.null(c_var) & sum(grepl('add',colnames(data))) == 9){
+    if(c_var == 'c_location'){
       data <- data %>% mutate(
         cag_School = cag_School + add_u18_school + add_18_64_school + add_65_school,
         cag_Work = cag_Work + add_u18_work + add_18_64_work + add_65_work,
         cag_Other = cag_Other + add_u18_other + add_18_64_other + add_65_other
-      )
+      )    
     }
   }
   
-  if (!is.null(p_var)) {
-    data <- data %>% select(p_id, !!!syms(p_var), post_strat_weight, contains("large_n"), starts_with("cag"))
-  } else {
-    data <- data %>% select(p_id, post_strat_weight, contains("large_n"), starts_with("cag"))
+  if(!is.null(p_var)){
+    data <- data %>% select(p_id, !!!syms(p_var), post_strat_weight, contains('large_n'), starts_with('cag'))
+  }else{
+    data <- data %>% select(p_id, post_strat_weight, contains('large_n'), starts_with('cag'))
   }
   
   data <- data.table(data)
   
-  p_vec <- if (!is.null(p_var)) {
-    if (length(p_var) == 1) {
-      unname(unlist(unique(data[, get(p_var)])))
-    } else {
-      unique(data[, ..p_var])
-    }
-  } else {
-    "NULL"
+  p_vec <- if(!is.null(p_var)){
+    if(length(p_var) == 1){
+      unname(unlist(unique(data[,get(p_var)])))
+    }else{
+      unique(data[,..p_var])
+    }}else{
+    'NULL'
   }
-  c_vec <- gsub("cag_", "", unique(colnames(data)[grepl("cag_", colnames(data))]))
+  c_vec <- gsub('cag_','',unique(colnames(data)[grepl('cag_',colnames(data))]))
   
   # main output
-  bs_out <- if (is.null(p_var) | length(p_var) == 1) {
-    CJ(bs_index = 1:bs, p_var = p_vec, c_var = c_vec, N = -8, mu = -8, k = -8)
-  } else {
-    CJ(bs_index = 1:bs, p_var_1 = unlist(unique(p_vec[, 1])), p_var_2 = unlist(unique(p_vec[, 2])), c_var = c_vec, N = -8, mu = -8, k = -8)
+  bs_out <- if(is.null(p_var) | length(p_var) == 1){CJ(bs_index = 1:bs, p_var = p_vec, c_var = c_vec, N = -8, mu = -8, k = -8)}else{
+    CJ(bs_index = 1:bs, p_var_1 = unlist(unique(p_vec[,1])), p_var_2 = unlist(unique(p_vec[,2])), c_var = c_vec, N = -8, mu = -8, k = -8)
   }
   
   # if total
-  if (is.null(p_var) & is.null(c_var)) {
-    # progress bar
-    pb <- txtProgressBar(min = 0, max = bs, initial = 0, style = 3)
-    step_i <- 0
+  if(is.null(p_var) & is.null(c_var)){
     
-    setnames(data, "cag_NULL", "c_var", skip_absent = TRUE)
+    # progress bar 
+    pb <- txtProgressBar(min = 0, max = bs, initial = 0, style=3); step_i <- 0 
+    
+    setnames(data, 'cag_NULL', 'c_var', skip_absent=TRUE)
     
     # print(p)
     n_col <- n_distinct(data$p_id)
     counts <- data.table(matrix(0, ncol = n_col))
     
-    bs_out[, N := n_col]
+    bs_out[,N := n_col]
     
     # bootstrapping
-    for (bs_i in 1:bs) {
+    for(bs_i in 1:bs){
+      
       # p_ids to sample from
       data <- data[, row_id := 1:nrow(data)] # = p_id for adults but not for children
-      ids_df <- unique(data[, c("p_id", "row_id", "post_strat_weight")])
+      ids_df <- unique(data[, c('p_id', 'row_id', 'post_strat_weight')])
       row_samples <- sample(ids_df$row_id, replace = T, prob = ids_df$post_strat_weight)
       
       # merging sampled data
-      occurrences <- rbind(
-        data.table(table(row_samples)),
-        data.table(
-          row_samples = (1:nrow(data))[!(1:nrow(data)) %in% row_samples],
-          N = 0
-        )
-      )
-      setnames(occurrences, "row_samples", "row_id")
-      occurrences[, row_id := as.numeric(row_id)]
-      data_add <- data[occurrences, on = "row_id"]
+      occurrences <- rbind(data.table(table(row_samples)), 
+                           data.table(row_samples = (1:nrow(data))[!(1:nrow(data)) %in% row_samples],
+                                      N = 0
+                           ))
+      setnames(occurrences, 'row_samples', 'row_id'); occurrences[, row_id := as.numeric(row_id)]
+      data_add <- data[occurrences, on = 'row_id']
       counts_all <- data_add[rep(seq_len(nrow(data_add)), N), ]
-      counts_all[, c("row_id", "N") := NULL]
+      counts_all[, c('row_id','N') := NULL]
       
       # add large_n in, if large_n_input == T
-      if (large_n_input) {
+      if(large_n_input){
         counts_all[, c_var := c_var + large_n][, large_n := NULL]
       }
       
       # move this data into `counts`
-      if (bs_i == 1) {
-        counts <- matrix(unlist(counts_all[, "c_var"]), nrow = 1)
-      } else {
-        counts <- rbind(counts, matrix(unlist(counts_all[, "c_var"]), nrow = 1))
+      if(bs_i == 1){
+        counts <- matrix(unlist(counts_all[, 'c_var']), nrow=1)
+      }else{
+        counts <- rbind(counts, matrix(unlist(counts_all[, 'c_var']), nrow=1))  
       }
       
       # if(bs_i %% 50 == 0){print(bs_i)}
       
-      setTxtProgressBar(pb, step_i)
-      step_i <- step_i + 1
+      setTxtProgressBar(pb,step_i); step_i <- step_i + 1
+      
     }
     
     # fit negative binomial
-    mu_out <- nbinom_optim(counts, "mu", trunc = trunc_in)
-    k_out <- nbinom_optim(counts, "k", trunc = trunc_in)
+    mu_out <- nbinom_optim(counts, 'mu', trunc = trunc_in)
+    k_out <- nbinom_optim(counts, 'k', trunc = trunc_in)
     
-    bs_out[, mu := mu_out]
-    bs_out[, k := k_out]
+    bs_out[,mu := mu_out]
+    bs_out[,k := k_out]
+    
   }
   # if participant attribute
-  if (!is.null(p_var) & is.null(c_var)) {
-    if (length(p_var) == 1) {
-      # progress bar
-      pb <- txtProgressBar(min = 0, max = bs * length(p_vec), initial = 0, style = 3)
-      step_i <- 0
+  if(!is.null(p_var) & is.null(c_var)){
+    
+    if(length(p_var) == 1){
+      # progress bar 
+      pb <- txtProgressBar(min = 0, max = bs*length(p_vec), initial = 0, style=3); step_i <- 0 
       
-      setnames(data, "cag_NULL", "c_var", skip_absent = TRUE)
+      setnames(data, 'cag_NULL', 'c_var', skip_absent=TRUE)
       
-      for (p in p_vec) {
+      for(p in p_vec){
         # print(p)
         n_col <- n_distinct((data[get(p_var) == p, p_id]))
         counts <- data.table(matrix(0, ncol = n_col))
@@ -671,185 +643,181 @@ bootstrap_sample_one_dim <- function(
         bs_out[p_var == p, N := n_col]
         
         # bootstrapping
-        for (bs_i in 1:bs) {
+        for(bs_i in 1:bs){
+          
           # p_ids to sample from
           data <- data[, row_id := 1:nrow(data)] # = p_id for adults but not for children
-          ids_df <- unique(data[get(p_var) == p, c("p_id", "row_id", "post_strat_weight")])
+          ids_df <- unique(data[get(p_var) == p, c('p_id', 'row_id', 'post_strat_weight')])
           row_samples <- sample(ids_df$row_id, replace = T, prob = ids_df$post_strat_weight)
           
           # merging sampled data
-          occurrences <- rbind(
-            data.table(table(row_samples)),
-            data.table(
-              row_samples = (1:nrow(data))[!(1:nrow(data)) %in% row_samples],
-              N = 0
-            )
-          )
-          setnames(occurrences, "row_samples", "row_id")
-          occurrences[, row_id := as.numeric(row_id)]
-          data_add <- data[occurrences, on = "row_id"]
+          occurrences <- rbind(data.table(table(row_samples)), 
+                               data.table(row_samples = (1:nrow(data))[!(1:nrow(data)) %in% row_samples],
+                                          N = 0
+                               ))
+          setnames(occurrences, 'row_samples', 'row_id'); occurrences[, row_id := as.numeric(row_id)]
+          data_add <- data[occurrences, on = 'row_id']
           counts_all <- data_add[rep(seq_len(nrow(data_add)), N), ]
-          counts_all[, c("row_id", "N") := NULL]
+          counts_all[, c('row_id','N') := NULL]
           
           # add large_n in, if large_n_input == T
-          if (large_n_input) {
+          if(large_n_input){
             counts_all[, c_var := c_var + large_n][, large_n := NULL]
           }
           
           # move this data into `counts`
-          if (bs_i == 1) {
-            counts <- matrix(unlist(counts_all[, "c_var"]), nrow = 1)
-          } else {
-            counts <- rbind(counts, matrix(unlist(counts_all[, "c_var"]), nrow = 1))
+          if(bs_i == 1){
+            counts <- matrix(unlist(counts_all[, 'c_var']), nrow=1)
+          }else{
+            counts <- rbind(counts, matrix(unlist(counts_all[, 'c_var']), nrow=1))  
           }
           
           # if(bs_i %% 50 == 0){print(bs_i)}
           
-          setTxtProgressBar(pb, step_i)
-          step_i <- step_i + 1
+          setTxtProgressBar(pb,step_i); step_i <- step_i + 1
+          
         }
         
         # fit negative binomial
-        mu_out <- nbinom_optim(counts, "mu", trunc = trunc_in)
-        k_out <- nbinom_optim(counts, "k", trunc = trunc_in)
+        mu_out <- nbinom_optim(counts, 'mu', trunc = trunc_in)
+        k_out <- nbinom_optim(counts, 'k', trunc = trunc_in)
         
         bs_out[p_var == p, mu := mu_out]
         bs_out[p_var == p, k := k_out]
+        
       }
     }
     
-    if (length(p_var) == 2) {
-      # progress bar
-      pb <- txtProgressBar(min = 0, max = bs * nrow(p_vec), initial = 0, style = 3)
-      step_i <- 0
+    if(length(p_var) == 2){
       
-      setnames(data, "cag_NULL", "c_var", skip_absent = TRUE)
+      # progress bar 
+      pb <- txtProgressBar(min = 0, max = bs*nrow(p_vec), initial = 0, style=3); step_i <- 0 
       
-      var1 <- colnames(p_vec)[1]
-      var2 <- colnames(p_vec)[2]
+      setnames(data, 'cag_NULL', 'c_var', skip_absent=TRUE)
       
-      for (p_row in 1:nrow(p_vec)) {
-        var1_val <- unname(unlist(p_vec[p_row, ..var1]))
-        var2_val <- unname(unlist(p_vec[p_row, ..var2]))
+      var1 <- colnames(p_vec)[1]; var2 <- colnames(p_vec)[2]
+      
+      for(p_row in 1:nrow(p_vec)){
         
-        n_col <- n_distinct(data[which(data[, ..var1] == var1_val & data[, ..var2] == var2_val)])
+        var1_val <- unname(unlist(p_vec[p_row,..var1])); var2_val <- unname(unlist(p_vec[p_row,..var2]))
+        
+        n_col <- n_distinct(data[which(data[,..var1] == var1_val & data[,..var2] == var2_val)])
         counts <- data.table(matrix(0, ncol = n_col))
         
         bs_out[p_var_1 == var1_val & p_var_2 == var2_val, N := n_col]
         
         # bootstrapping
-        for (bs_i in 1:bs) {
+        for(bs_i in 1:bs){
+          
           # p_ids to sample from
           data <- data[, row_id := 1:nrow(data)] # = p_id for adults but not for children
-          ids_df <- unique(data[which(data[, ..var1] == var1_val & data[, ..var2] == var2_val), c("p_id", "row_id", "post_strat_weight")])
+          ids_df <- unique(data[which(data[,..var1] == var1_val & data[,..var2] == var2_val), c('p_id', 'row_id', 'post_strat_weight')])
           row_samples <- sample(ids_df$row_id, replace = T, prob = ids_df$post_strat_weight)
           
           # merging sampled data
-          occurrences <- rbind(
-            data.table(table(row_samples)),
-            data.table(
-              row_samples = (1:nrow(data))[!(1:nrow(data)) %in% row_samples],
-              N = 0
-            )
-          )
-          setnames(occurrences, "row_samples", "row_id")
-          occurrences[, row_id := as.numeric(row_id)]
-          data_add <- data[occurrences, on = "row_id"]
+          occurrences <- rbind(data.table(table(row_samples)), 
+                               data.table(row_samples = (1:nrow(data))[!(1:nrow(data)) %in% row_samples],
+                                          N = 0
+                               ))
+          setnames(occurrences, 'row_samples', 'row_id'); occurrences[, row_id := as.numeric(row_id)]
+          data_add <- data[occurrences, on = 'row_id']
           counts_all <- data_add[rep(seq_len(nrow(data_add)), N), ]
-          counts_all[, c("row_id", "N") := NULL]
+          counts_all[, c('row_id','N') := NULL]
           
           # add large_n in, if large_n_input == T
-          if (large_n_input) {
+          if(large_n_input){
             counts_all[, c_var := c_var + large_n][, large_n := NULL]
           }
           
           # move this data into `counts`
-          if (bs_i == 1) {
-            counts <- matrix(unlist(counts_all[, "c_var"]), nrow = 1)
-          } else {
-            counts <- rbind(counts, matrix(unlist(counts_all[, "c_var"]), nrow = 1))
+          if(bs_i == 1){
+            counts <- matrix(unlist(counts_all[, 'c_var']), nrow=1)
+          }else{
+            counts <- rbind(counts, matrix(unlist(counts_all[, 'c_var']), nrow=1))  
           }
           
           # if(bs_i %% 50 == 0){print(bs_i)}
           
-          setTxtProgressBar(pb, step_i)
-          step_i <- step_i + 1
+          setTxtProgressBar(pb,step_i); step_i <- step_i + 1
+          
         }
         
         # fit negative binomial
-        mu_out <- nbinom_optim(counts, "mu", trunc = trunc_in)
-        k_out <- nbinom_optim(counts, "k", trunc = trunc_in)
+        mu_out <- nbinom_optim(counts, 'mu', trunc = trunc_in)
+        k_out <- nbinom_optim(counts, 'k', trunc = trunc_in)
         
         bs_out[p_var_1 == var1_val & p_var_2 == var2_val, mu := mu_out]
         bs_out[p_var_1 == var1_val & p_var_2 == var2_val, k := k_out]
+        
       }
     }
+    
   }
   # if contact attribute
-  if (is.null(p_var) & !is.null(c_var)) {
-    # progress bar
-    pb <- txtProgressBar(min = 0, max = 2 * (bs * length(c_vec)), initial = 0, style = 3)
-    step_i <- 0
+  if(is.null(p_var) & !is.null(c_var)){
+    
+    # progress bar 
+    pb <- txtProgressBar(min = 0, max = 2*(bs*length(c_vec)), initial = 0, style=3); step_i <- 0 
     
     counts <- list()
     
     # will contain count values for each possible contact's group
     n_col <- n_distinct(data$p_id)
     
-    bs_out[, N := n_col]
+    bs_out[,N := n_col]
     
     # bootstrapping
-    for (bs_i in 1:bs) {
+    for(bs_i in 1:bs){
+      
       # p_ids to sample from
       data <- data[, row_id := 1:nrow(data)] # = p_id for adults but not for children
-      ids_df <- data[, c("p_id", "row_id", "post_strat_weight")]
+      ids_df <- data[, c('p_id', 'row_id', 'post_strat_weight')]
       row_samples <- sample(ids_df$row_id, replace = T, prob = ids_df$post_strat_weight)
       
       # merging sampled data
-      occurrences <- rbind(
-        data.table(table(row_samples)),
-        data.table(
-          row_samples = (1:nrow(data))[!(1:nrow(data)) %in% row_samples],
-          N = 0
-        )
-      )
-      setnames(occurrences, "row_samples", "row_id")
-      occurrences[, row_id := as.numeric(row_id)]
-      data_add <- data[occurrences, on = "row_id"]
+      occurrences <- rbind(data.table(table(row_samples)), 
+                           data.table(row_samples = (1:nrow(data))[!(1:nrow(data)) %in% row_samples],
+                                      N = 0
+                           ))
+      setnames(occurrences, 'row_samples', 'row_id'); occurrences[, row_id := as.numeric(row_id)]
+      data_add <- data[occurrences, on = 'row_id']
       counts_all <- data_add[rep(seq_len(nrow(data_add)), N), ]
-      counts_all[, c("row_id", "N") := NULL]
+      counts_all[, c('row_id','N') := NULL]
       
       # move this data into `counts`
-      for (c in c_vec) {
-        if (bs_i == 1) {
-          counts[[c]] <- matrix(counts_all[, get(paste0("cag_", c))], nrow = 1)
-        } else {
-          counts[[c]] <- rbind(counts[[c]], matrix(counts_all[, get(paste0("cag_", c))], nrow = 1))
-        }
+      for(c in c_vec){
         
-        setTxtProgressBar(pb, step_i)
-        step_i <- step_i + 1
+        if(bs_i == 1){
+          counts[[c]] <- matrix(counts_all[, get(paste0('cag_', c))], nrow=1)
+        }else{
+          counts[[c]] <- rbind(counts[[c]], matrix(counts_all[, get(paste0('cag_', c))], nrow=1))  
+        }
+      
+        setTxtProgressBar(pb,step_i); step_i <- step_i + 1  
       }
+      
     }
     
     step_i <- step_i + bs
     
     # fit negative binomial
-    for (c in c_vec) {
-      mu_out <- nbinom_optim(counts[[c]], "mu", trunc = trunc_in)
-      k_out <- nbinom_optim(counts[[c]], "k", trunc = trunc_in)
+    for(c in c_vec){
+      
+      mu_out <- nbinom_optim(counts[[c]], 'mu', trunc = trunc_in)
+      k_out <- nbinom_optim(counts[[c]], 'k', trunc = trunc_in)
       
       bs_out[c_var == c, mu := mu_out]
       bs_out[c_var == c, k := k_out]
       
-      setTxtProgressBar(pb, step_i)
-      step_i <- step_i + bs
+      setTxtProgressBar(pb,step_i); step_i <- step_i + bs
     }
+    
   }
   
   close(pb)
   
   bs_out
+  
 }
 
 
@@ -867,34 +835,30 @@ nb_bootstrap_analysis <- function(
     ethnicity_structure = ons_ethnicity,
     age_structure_ac = age_structure_adult_child,
     large_n_input = T,
-    weighting_vec = c("p_age_group", "p_gender", "p_ethnicity", "day_week"),
-    save = T) {
+    weighting_vec = c('p_age_group','p_gender','p_ethnicity','day_week'),
+    save = T
+){
+  
   weighting_vec <- weighting_vec[weighting_vec %notin% participant_var]
   
-  weighted_all <- if (length(weighting_vec) >= 1) {
-    part %>%
-      select(p_id) %>%
-      left_join(
-        weight_participants(part,
-                            age_structure,
-                            age_structure_gendered,
-                            ethnicity_structure,
-                            age_structure_ac,
-                            weighting = weighting_vec,
-                            group_vars = participant_var
-        ) %>%
-          select(p_id, post_strat_weight),
-        by = "p_id"
-      )
-  } else {
-    part %>%
-      group_by(p_id) %>%
-      summarise(post_strat_weight = 1)
+  weighted_all <- if(length(weighting_vec)>=1){
+    part %>% select(p_id) %>% 
+      left_join(weight_participants(part, 
+                                    age_structure, 
+                                    age_structure_gendered,
+                                    ethnicity_structure, 
+                                    age_structure_ac,
+                                    weighting = weighting_vec,
+                                    group_vars = participant_var) %>% 
+                  select(p_id, post_strat_weight),
+                by = 'p_id')
+  }else{
+    part %>% group_by(p_id) %>% summarise(post_strat_weight = 1)
   }
   
-  if (!is.null(location_filter)) {
+  if(!is.null(location_filter)){
     contact_data <- contact_data %>% filter(c_location == location)
-    not_location_cols <- colnames(participant_data)[grepl("add", colnames(participant_data))]
+    not_location_cols <- colnames(participant_data)[grepl('add',colnames(participant_data))]
     location_cols <- not_location_cols[grepl(tolower(location), not_location_cols)]
     not_location_cols <- not_location_cols[!grepl(tolower(location), not_location_cols)]
     participant_data[, not_location_cols] <- 0
@@ -913,22 +877,23 @@ nb_bootstrap_analysis <- function(
   
   # Add survey weights
   weighted_contact_data <- raw_counts_matr %>%
-    left_join(weighted_all, by = c("p_id"))
+    left_join(weighted_all, by = c('p_id')) 
   
   weighted_bs <- bootstrap_sample_one_dim(
     data = weighted_contact_data,
     p_var = participant_var,
     c_var = contact_var,
-    bs = n_bootstrap,
+    bs = n_bootstrap, 
     large_n_input,
     trunc_in = trunc
   )
   
-  if (save == T) {
-    saveRDS(weighted_bs, here::here("results", survey, "neg_bin", "one_dim", paste0("nb_", gsub("p_", "", participant_var), ".rds")))
+  if(save == T){
+    saveRDS(weighted_bs, here::here('results',survey,'neg_bin','one_dim',paste0('nb_',gsub('p_','',participant_var),'.rds')))  
   }
   
   weighted_bs
+  
 }
 
 # main fitting function
@@ -950,37 +915,30 @@ nb_matrix_fit <- function(
     save = T,
     impute_contact = F, # is the contact_var being imputed in the bootstrapping? (only usable for c_ethnicity and c_sec_input)
     impute_vars = NULL # what are the dependent variables for the imputation?
-    ) {
-  if (impute_contact & any(contact_var %notin% c('c_ethnicity','c_sec_input'))) {
-    stop("Can't impute for this contact variable.")
-  }
+    ){
+  
+  if(impute_contact & any(contact_var %notin% c('c_ethnicity','c_sec_input'))){stop("Can't impute for this contact variable.")}
   
   weighting_vec <- weighting_vec[weighting_vec %notin% participant_var]
 
-  weighted_all <- if (length(weighting_vec) >= 1){
-    participant_data %>% 
-      select(p_id) %>% 
-        left_join(
-          weight_participants(
-            part=participant_data, 
-            age_structure, 
-            age_structure_gendered,
-            ethnicity_structure, 
-            age_structure_ac,
-            weighting = weighting_vec,
-            group_vars = participant_var
-          ) %>% 
-            select(p_id, post_strat_weight),
-          by = 'p_id')
-  } else {
-    participant_data %>% 
-      group_by(p_id) %>% 
-      summarise(post_strat_weight = 1)
+  weighted_all <- if(length(weighting_vec)>=1){
+    participant_data %>% select(p_id) %>% 
+      left_join(weight_participants(part=participant_data, 
+                                    age_structure, 
+                                    age_structure_gendered,
+                                    ethnicity_structure, 
+                                    age_structure_ac,
+                                    weighting = weighting_vec,
+                                    group_vars = participant_var) %>% 
+                  select(p_id, post_strat_weight),
+                by = 'p_id')
+  }else{
+    participant_data %>% group_by(p_id) %>% summarise(post_strat_weight = 1)
   }
   
-  if (is.null(contact_var)){
+  if(is.null(contact_var)){
     contact_data <- contact_data %>% mutate(c_null = 1)
-    contact_var <- "c_null"
+    contact_var <- 'c_null'
   }
   
   # summarise contact data
@@ -993,11 +951,9 @@ nb_matrix_fit <- function(
   )
   
   # add imputation dependent variables if using
-  if (impute_contact & !is.null(impute_vars)){
+  if(impute_contact & !is.null(impute_vars)){
     # throw error if impute_vars not in colnames(participant_data)
-    if (length(setdiff(impute_vars, colnames(participant_data))) > 0) {
-      stop('Not set up for impute_vars not in participant_data')
-    }
+    if(length(setdiff(impute_vars, colnames(participant_data))) > 0){stop('Not set up for impute_vars not in participant_data')}
     # add if not already there
     impute_vars_add <- impute_vars[!impute_vars == participant_var]
     raw_counts_matr <- raw_counts_matr %>% left_join(participant_data %>% select(p_id, !!!syms(impute_vars_add)), by = 'p_id')  
@@ -1007,7 +963,7 @@ nb_matrix_fit <- function(
   weighted_contact_data <- raw_counts_matr %>%
     left_join(weighted_all, by = c('p_id')) 
   
-  bs_parallel <- function(location) {
+  bs_parallel <- function(location){
     bootstrap_sample(
       data = weighted_contact_data,
       locn = location,
@@ -1022,10 +978,8 @@ nb_matrix_fit <- function(
     )
   }
   
-  # Set number of cores based on OS (mclapply doesn't support mc.cores > 1 on Windows)
-  n_cores <- if (.Platform$OS.type == "windows") 1 else length(locations)
-  weighted_bs <- mclapply(locations, bs_parallel, mc.cores = n_cores)
-  
+  weighted_bs <- mclapply(locations, bs_parallel, mc.cores = length(locations))
+
   names(weighted_bs) <- locations
   
   if(save == T){
@@ -1033,6 +987,7 @@ nb_matrix_fit <- function(
   }
   
   weighted_bs
+  
 }
 
 # Function to normalise with respect to underlying age structure
