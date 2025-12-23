@@ -9,11 +9,11 @@ polymod_weights <- function(
   # add 0 to lower bounds if not there, same with 18
   fine_ages <- sort(unique(c(0, fine_ages)))
   age_labels <- c(paste0(c(fine_ages[1:length(fine_ages) - 1]), "-", c(fine_ages[2:length(fine_ages)] - 1)), paste0(fine_ages[length(fine_ages)], "+"))
-
+  
   # broad ages labels
   broad_ages <- sort(unique(c(0, broad_ages)))
   broad_age_labels <- c(paste0(c(broad_ages[1:length(broad_ages) - 1]), "-", c(broad_ages[2:length(broad_ages)] - 1)), paste0(broad_ages[length(broad_ages)], "+"))
-
+  
   # overlaps between fine and broad age groups
   overlaps <- CJ(age_labels, broad_age_labels, overlap = F)
   for (i in 1:nrow(overlaps)) {
@@ -27,12 +27,12 @@ polymod_weights <- function(
         c(as.numeric(gsub("[+]", "", overlaps[i, age_labels])), 120),
       T ~ as.numeric(unlist(strsplit(overlaps[i, age_labels], "-")))
     ))
-
+    
     if (length(intersect(c(broad_vec[1]:broad_vec[2]), c(c_vec[1]:c_vec[2]))) > 0) {
       overlaps[i, overlap := T]
     }
   }
-
+  
   # switch between age label styles (ukscs vs polymod)
   age_to_pm_lab <- function(chars) {
     out <- c()
@@ -47,73 +47,73 @@ polymod_weights <- function(
     }
     out
   }
-
+  
   # contact matrices list
   matrices <- list()
-
+  
   # per capita location-specific contact matrix, scaled up to 2025 population
   for (i in 1:length(locations)) {
     location <- locations[i]
     filter_locn <- list(a = 1)
     names(filter_locn) <- paste0("cnt_", location)
-
+    
     if (location == "other") {
       out <- socialmixr::contact_matrix(polymod,
-        countries = "United Kingdom", age.limits = fine_ages,
-        per.capita = TRUE,
-        filter = list(cnt_transport = 1),
-        missing.participant.age = "remove",
-        missing.contact.age = "remove"
+                                        countries = "United Kingdom", age.limits = fine_ages,
+                                        per.capita = TRUE,
+                                        filter = list(cnt_transport = 1),
+                                        missing.participant.age = "remove",
+                                        missing.contact.age = "remove"
       )$matrix.per.capita
       out <- out + socialmixr::contact_matrix(polymod,
-        countries = "United Kingdom", age.limits = fine_ages,
-        per.capita = TRUE,
-        filter = list(cnt_leisure = 1),
-        missing.participant.age = "remove",
-        missing.contact.age = "remove"
+                                              countries = "United Kingdom", age.limits = fine_ages,
+                                              per.capita = TRUE,
+                                              filter = list(cnt_leisure = 1),
+                                              missing.participant.age = "remove",
+                                              missing.contact.age = "remove"
       )$matrix.per.capita
       out <- out + socialmixr::contact_matrix(polymod,
-        countries = "United Kingdom", age.limits = fine_ages,
-        per.capita = TRUE,
-        filter = list(cnt_otherplace = 1),
-        missing.participant.age = "remove",
-        missing.contact.age = "remove"
+                                              countries = "United Kingdom", age.limits = fine_ages,
+                                              per.capita = TRUE,
+                                              filter = list(cnt_otherplace = 1),
+                                              missing.participant.age = "remove",
+                                              missing.contact.age = "remove"
       )$matrix.per.capita
     } else {
       if (location == "total") {
         out <- socialmixr::contact_matrix(polymod,
-          countries = "United Kingdom", age.limits = fine_ages,
-          per.capita = TRUE,
-          missing.participant.age = "remove",
-          missing.contact.age = "remove"
+                                          countries = "United Kingdom", age.limits = fine_ages,
+                                          per.capita = TRUE,
+                                          missing.participant.age = "remove",
+                                          missing.contact.age = "remove"
         )$matrix.per.capita
       } else {
         out <- socialmixr::contact_matrix(polymod,
-          countries = "United Kingdom", age.limits = fine_ages,
-          per.capita = TRUE,
-          filter = filter_locn,
-          missing.participant.age = "remove",
-          missing.contact.age = "remove"
+                                          countries = "United Kingdom", age.limits = fine_ages,
+                                          per.capita = TRUE,
+                                          filter = filter_locn,
+                                          missing.participant.age = "remove",
+                                          missing.contact.age = "remove"
         )$matrix.per.capita
       }
     }
-
+    
     # scale up to 2022 population
     for (age in 1:nrow(age_struc)) {
       out[, age] <- out[, age] * age_struc$n[age]
     }
-
+    
     matrices[[i]] <- out
   }
-
+  
   names(matrices) <- locations
-
+  
   # polymod weights for each p_age_group, c_age_group, c_location
   pmw <- data.table(CJ(
     p_age_group = age_labels, c_age_group = age_labels,
     broad_age_group = broad_age_labels, c_location = locations, prob = -8, sorted = F
   ))
-
+  
   for (i in 1:nrow(pmw)) {
     # if no overlap, prob = 0
     if (overlaps[age_labels == pmw[i, c_age_group] & broad_age_labels == pmw[i, broad_age_group], overlap] == F) {
@@ -157,11 +157,11 @@ polymod_weights <- function(
       }
     }
   }
-
+  
   # pmw$p_age_group <- factor(pmw$p_age_group, levels = age_labels); pmw$c_age_group <- factor(pmw$c_age_group, levels = age_labels)
   # pmw %>% filter(broad_age_group=='0-17') %>%
   #   ggplot() + geom_line(aes(x=c_age_group, y=prob, group=interaction(c_location,broad_age_group), col=c_location),lwd=0.8) + facet_wrap(.~p_age_group)
-
+  
   # check all appropriate sums are 1
   test <- pmw %>%
     group_by(p_age_group, broad_age_group, c_location) %>%
@@ -169,7 +169,7 @@ polymod_weights <- function(
   if (!all.equal(test$s, rep(1, nrow(test)))) {
     warning("Some sums not 1")
   }
-
+  
   pmw
 }
 
@@ -194,7 +194,7 @@ nbinom_optim <- function(counts_input,
       return(as.numeric(outs$par[param]))
     }
   }
-
+  
   if (sum(counts_input != 0)) {
     outs_mat <- apply(counts_input, FUN = bs_optim, MARGIN = 1)
     outs_mat
@@ -214,12 +214,12 @@ raw_counts <- function(
     cont_in <- cont_in %>% mutate(c_null = "NULL")
     contact_var <- "c_null"
   }
-
+  
   # Determine which variables to select from part_in
   select_vars <- unique(c("p_id", participant_var))
-
+  
   if ((length(contact_var) == 1 & "c_age_group" %in% contact_var & large_n_input) |
-    (length(contact_var) == 1 & "c_location" %in% contact_var & large_n_input)) {
+      (length(contact_var) == 1 & "c_location" %in% contact_var & large_n_input)) {
     select_vars <- c(select_vars, colnames(part_in)[grepl("add_", colnames(part_in))])
   } else {
     if (large_n_input & length(contact_var) == 1) {
@@ -228,29 +228,29 @@ raw_counts <- function(
       }
     }
   }
-
+  
   if (location_inclusion == T) {
     contact_var_orig <- contact_var
     contact_var <- unique(c(contact_var, "c_location"))
   } else {
     contact_var_orig <- contact_var
   }
-
+  
   # in case joining vars (apart from p_id) are in both part_in and cont_in
   for (var_i in select_vars[select_vars != "p_id"]) {
     cont_in <- cont_in %>% select(!starts_with(var_i))
   }
-
+  
   # Calculate contacts for each combination and location
   contact_counts <- cont_in %>%
     filter(p_id %in% part_in$p_id) %>% # in case cont_in/part_in are filtered, e.g. by gender
     left_join(part_in %>% filter(p_id %in% cont_in$p_id) %>% select(!!!syms(select_vars)), by = "p_id") %>%
     group_by(!!!syms(select_vars), !!!syms(contact_var)) %>%
     summarise(n_contacts = n(), .groups = "drop")
-
+  
   # drop any participants which contain any NAs for contact_var
   contact_counts <- contact_counts %>% drop_na(!!!syms(contact_var))
-
+  
   # adding back in individuals with 0 contacts
   add_data <- part_in %>%
     filter(p_id %notin% cont_in$p_id) %>%
@@ -268,20 +268,20 @@ raw_counts <- function(
     add_data
   ) %>%
     complete(nesting(!!!syms(select_vars)), !!!syms(contact_var), fill = list(n_contacts = 0))
-
+  
   if (location_inclusion == T) {
     # Calculate total contacts across all locations
     total_contacts <- contact_counts %>%
       group_by(!!!syms(select_vars), !!!syms(contact_var[contact_var != "c_location"])) %>%
       summarise(n_contacts = sum(n_contacts), .groups = "drop") %>%
       mutate(c_location = "Total")
-
+    
     # Combine location-specific and total contacts
     all_contacts <- bind_rows(contact_counts, total_contacts)
   } else {
     all_contacts <- contact_counts
   }
-
+  
   # pivot_wider
   all_contacts_w <- all_contacts %>%
     pivot_wider(
@@ -290,11 +290,11 @@ raw_counts <- function(
       names_glue = sprintf("cag_{%s}", contact_var_orig),
     ) %>%
     select(!!!syms(select_vars), contains("c_location"), starts_with("cag"), starts_with("add_"))
-
+  
   # set maximum (right-truncation)
   all_contacts_w <- all_contacts_w %>%
     mutate(across(starts_with("add_"), max_100))
-
+  
   all_contacts_w
 }
 
@@ -302,52 +302,52 @@ raw_counts <- function(
 add_large_n <- function(vec, p_age_in, locn_in, large_weights_loc_in) {
   p_age_num <- which(age_labels == p_age_in)
   # print(length(vec))
-
+  
   # u18 contacts
   if (vec[1] > 0) {
     probs <- large_weights_loc_in[broad_age_group %like% "0-17", ]$prob
     samps <- sample(1:length(probs),
-      size = vec[1],
-      replace = T,
-      prob = probs
+                    size = vec[1],
+                    replace = T,
+                    prob = probs
     )
-
+    
     occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps == x]))
-
+    
     vec <- vec + c(rep(0, 3), occurrence_vec)
   }
-
-
+  
+  
   # add other contacts proportional to polymod weights
-
+  
   # 18-64
   if (vec[2] > 0) {
     probs <- large_weights_loc_in[broad_age_group %like% "18-64", ]$prob
     samps <- sample(1:length(probs),
-      size = vec[2],
-      replace = T,
-      prob = probs
+                    size = vec[2],
+                    replace = T,
+                    prob = probs
     )
-
+    
     occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps == x]))
-
+    
     vec <- vec + c(rep(0, 3), occurrence_vec)
   }
-
+  
   # 65+
   if (vec[3] > 0) {
     probs <- large_weights_loc_in[broad_age_group %like% "65+", ]$prob
     samps <- sample(1:length(probs),
-      size = vec[3],
-      replace = T,
-      prob = probs
+                    size = vec[3],
+                    replace = T,
+                    prob = probs
     )
-
+    
     occurrence_vec <- sapply(1:length(probs), FUN = function(x) length(samps[samps == x]))
-
+    
     vec <- vec + c(rep(0, 3), occurrence_vec)
   }
-
+  
   vec
 }
 
@@ -362,7 +362,9 @@ bootstrap_sample <- function(
     large_weights = NULL,
     trunc_in,
     impute_contact_in,
-    impute_vars_in) {
+    impute_vars_in
+){
+  
   locn <- tolower(locn)
 
   if (is.null(large_weights) & large_n_input == T) {
@@ -445,7 +447,7 @@ bootstrap_sample <- function(
       counts_all[, p_id_row := paste0(p_id, "_", 1:nrow(counts_all))]
 
       # add large_n in at random, if large_n_input == T
-      if (large_n_input & length(c_var == 1) & "c_age_group" %in% c_var & locn %in% large_weights$c_location) {
+      if (large_n_input & length(c_var) == 1 & "c_age_group" %in% c_var & locn %in% large_weights$c_location) {
         large_weights_loc <- large_weights %>% filter(c_location == locn, !!sym(p_var) == p)
 
         # transpose so can vectorise across columns
