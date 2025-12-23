@@ -114,13 +114,40 @@ eth_age_sex <- eth_age_sex[, lapply(.SD, c_to_0)]
 
 eth_age_sex[, 3:ncol(eth_age_sex)] <- lapply(eth_age_sex[, 3:ncol(eth_age_sex)], as.numeric)
 
+eth_age <- eth_age_sex
+
 for(ethn in c('Asian','Black','Mixed','White','Other')){
+  vec <- (substr(colnames(eth_age_sex),1,5) == ethn) 
+  eth_age$next_col <- rowSums(eth_age[, ..vec])
+  colnames(eth_age)[length(colnames(eth_age))] <- paste0(ethn,'_')
   for(sex in c('Female','Male')){
     vec <- (substr(colnames(eth_age_sex),1,5) == ethn) & grepl(sex,colnames(eth_age_sex))
     eth_age_sex$next_col <- rowSums(eth_age_sex[, ..vec])
     colnames(eth_age_sex)[length(colnames(eth_age_sex))] <- paste0(ethn,'_',sex)
    }
 }
+
+eth_age <- eth_age %>%
+  select(Age, contains("_")) %>%
+  mutate(
+    p_age_group = cut(Age, breaks = age_breaks, labels = age_labels, right = FALSE)
+  ) %>%
+  select(-Age) %>%
+  pivot_longer(
+    cols = -c(p_age_group),
+    names_to = "p_ethnicity",
+    values_to = "value"
+  ) %>%
+  mutate(
+    p_ethnicity = sub("_$", "", p_ethnicity)   # drop trailing underscore
+  ) %>%
+  group_by(p_age_group, p_ethnicity) %>%
+  summarise(value = sum(value), .groups = "drop") %>%
+  mutate(proportion = value / sum(value)) %>%
+  complete(
+    p_age_group, p_ethnicity,
+    fill = list(value = 0, proportion = 0)
+  )
 
 eth_age_sex <- eth_age_sex %>% select('Age',contains('_')) %>% mutate('p_age_group' = cut(Age,
                                                                                           breaks = age_breaks,
